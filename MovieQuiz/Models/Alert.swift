@@ -1,5 +1,5 @@
-struct QuizResultsViewModel {
+struct Alert {
     let title: String
-    let text: String
+    let message: String
     let buttonText: String
 }
