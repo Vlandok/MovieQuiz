@@ -7,6 +7,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     private var currentQuestion: QuizQuestion?
     private var questionFactory: QuestionFactoryProtocol?
     private let statisticService: StatisticServiceProtocol = StatisticService()
+    private var resultAlertPresenter: ResultAlertPresenter!
 
     private var questionsAmount: Int { questionFactory?.questionsAmount ?? 0 }
 
@@ -16,6 +17,8 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         let questionFactory = QuestionFactory()
         questionFactory.delegate = self
         self.questionFactory = questionFactory
+        
+        resultAlertPresenter = ResultAlertPresenter(delegate: delegate, statisticService: statisticService)
 
         questionFactory.requestNextQuestion()
     }
@@ -68,46 +71,13 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     }
 
     private func showAlertResult() {
-        let bestGame = statisticService.bestGame
-
-        let formattedDate = DateFormatter.localizedString(
-            from: bestGame.date,
-            dateStyle: .short,
-            timeStyle: .short
-        )
-
-        let accuracy = String(format: "%.2f", statisticService.totalAccuracy)
-
-        let message =
-            "Ваш результат: \(correctAnswers)/\(questionsAmount)\n"
-            + "Количество сыгранных квизов: \(statisticService.gamesCount)\n"
-            + "Рекорд: \(bestGame.correct)/\(bestGame.total) (\(formattedDate))\n"
-            + "Средняя точность: \(accuracy)%"
-
-        let alert = Alert(
-            title: "Этот раунд окончен!",
-            message: message,
-            buttonText: "Сыграть еще раз"
-        )
-
-        let alertAction = UIAlertAction(
-            title: alert.buttonText, style: .default
-        ) { [weak self] _ in
+        resultAlertPresenter.showAlert(correctAnswers: correctAnswers, totalQuestions: questionsAmount) {
+            [weak self] in
             guard let self = self else { return }
             self.currentQuestionIndex = 0
             self.correctAnswers = 0
             self.questionFactory?.requestNextQuestion()
         }
-
-        let uiAlertController = UIAlertController(
-            title: alert.title,
-            message: alert.message,
-            preferredStyle: .alert
-        )
-
-        uiAlertController.addAction(alertAction)
-
-        delegate?.presentAlert(alert: uiAlertController)
     }
 
     private func convert(model: QuizQuestion) -> QuizStep {

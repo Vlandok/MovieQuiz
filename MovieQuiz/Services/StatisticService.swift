@@ -24,11 +24,9 @@ extension StatisticService: StatisticServiceProtocol {
             return GameResult(correct: correctAnswers, total: totalQuestions, date: date)
         }
         set {
-            if newValue.isBetterThan(bestGame) {
-                storage.set(newValue.correct, forKey: Keys.bestCorrect.rawValue)
-                storage.set(newValue.total, forKey: Keys.bestTotal.rawValue)
-                storage.set( newValue.date, forKey: Keys.bestDate.rawValue)
-            }
+            storage.set(newValue.correct, forKey: Keys.bestCorrect.rawValue)
+            storage.set(newValue.total, forKey: Keys.bestTotal.rawValue)
+            storage.set( newValue.date, forKey: Keys.bestDate.rawValue)
         }
     }
 
