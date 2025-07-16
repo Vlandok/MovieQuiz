@@ -7,20 +7,24 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     private var currentQuestion: QuizQuestion?
     private var questionFactory: QuestionFactoryProtocol?
     private let statisticService: StatisticServiceProtocol = StatisticService()
-    private var resultAlertPresenter: ResultAlertPresenter!
+    private let moviesLoader = MoviesLoading()
+    private var alertPresenter: AlertPresenter!
 
     private var questionsAmount: Int { questionFactory?.questionsAmount ?? 0 }
 
     weak var delegate: AlertDelegate?
+    weak var uiStateDelegate: UIStateDelegate?
 
     func viewDidLoad() {
-        let questionFactory = QuestionFactory()
-        questionFactory.delegate = self
-        self.questionFactory = questionFactory
-        
-        resultAlertPresenter = ResultAlertPresenter(delegate: delegate, statisticService: statisticService)
+        self.questionFactory = QuestionFactory(
+            moviesLoader: moviesLoader, delegate: self)
 
-        questionFactory.requestNextQuestion()
+        alertPresenter = AlertPresenter(
+            delegate: delegate, statisticService: statisticService)
+
+        self.uiStateDelegate?.setVisibilityContent(false)
+        self.uiStateDelegate?.setVisibilityLoadingIndicator(true)
+        self.questionFactory?.loadData()
     }
 
     func didReceiveNextQuestion(question: QuizQuestion?) {
@@ -32,6 +36,17 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
             self?.delegate?.upadeteQuiz(quiz: quiz)
             self?.delegate?.clearQuizImageBorder()
         }
+    }
+
+    func didFailToLoadData(with error: Error) {
+        uiStateDelegate?.setVisibilityContent(false)
+        showNetworkError(message: error.localizedDescription)
+    }
+
+    func didLoadDataFromServer() {
+        uiStateDelegate?.setVisibilityLoadingIndicator(false)
+        uiStateDelegate?.setVisibilityContent(true)
+        questionFactory?.requestNextQuestion()
     }
 
     func noButtonClicked() {
@@ -62,7 +77,8 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
 
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            statisticService.store(correct: correctAnswers, total: questionsAmount)
+            statisticService.store(
+                correct: correctAnswers, total: questionsAmount)
             showAlertResult()
         } else {
             currentQuestionIndex += 1
@@ -71,7 +87,9 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     }
 
     private func showAlertResult() {
-        resultAlertPresenter.showAlert(correctAnswers: correctAnswers, totalQuestions: questionsAmount) {
+        alertPresenter.showResultAlert(
+            correctAnswers: correctAnswers, totalQuestions: questionsAmount
+        ) {
             [weak self] in
             guard let self = self else { return }
             self.currentQuestionIndex = 0
@@ -80,9 +98,19 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
 
+    private func showNetworkError(message: String) {
+        alertPresenter.showNetworkErrorAlert{
+            [weak self] in
+            guard let self = self else { return }
+            
+            self.uiStateDelegate?.setVisibilityLoadingIndicator(true)
+            self.questionFactory?.loadData()
+        }
+    }
+
     private func convert(model: QuizQuestion) -> QuizStep {
         return QuizStep(
-            image: UIImage(named: model.image) ?? UIImage(),
+            image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
     }
