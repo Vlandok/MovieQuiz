@@ -10,7 +10,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     private let moviesLoader = MoviesLoading()
     private var alertPresenter: AlertPresenter!
 
-    private var questionsAmount: Int { questionFactory?.questionsAmount ?? 0 }
+    private var questionsAmount: Int = 10
 
     weak var delegate: AlertDelegate?
     weak var uiStateDelegate: UIStateDelegate?
