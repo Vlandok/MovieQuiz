@@ -56,6 +56,13 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     func yesButtonClicked() {
         showAnswerResult(isYesClicked: true)
     }
+    
+    func convert(model: QuizQuestion) -> QuizStep {
+        return QuizStep(
+            image: UIImage(data: model.image) ?? UIImage(),
+            question: model.text,
+            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
+    }
 
     private func showAnswerResult(isYesClicked: Bool) {
         guard let currentQuestion = currentQuestion else { return }
@@ -106,12 +113,5 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
             self.uiStateDelegate?.setVisibilityLoadingIndicator(true)
             self.questionFactory?.loadData()
         }
-    }
-
-    private func convert(model: QuizQuestion) -> QuizStep {
-        return QuizStep(
-            image: UIImage(data: model.image) ?? UIImage(),
-            question: model.text,
-            questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
     }
 }
